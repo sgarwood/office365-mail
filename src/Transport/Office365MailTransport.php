@@ -170,7 +170,7 @@ class Office365MailTransport extends AbstractTransport
         $headers = $this->toInternetMessageHeaders($message->getHeaders());
 
         if ($headers !== null) {
-            $messageData['internetMessageHeaders'] = $headers;
+            $messageData['message']['internetMessageHeaders'] = $headers;
         }
 
         return $messageData;
