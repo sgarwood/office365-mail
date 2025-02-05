@@ -7,7 +7,8 @@ use Microsoft\Graph\Model\UploadSession;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\MessageConverter;
-
+use Symfony\Component\Mime\Header\HeaderInterface;
+use Symfony\Component\Mime\Header\Headers;
 use Symfony\Component\Mime\Email;
 use Illuminate\Support\Str;
 
@@ -166,6 +167,12 @@ class Office365MailTransport extends AbstractTransport
             }
         }
 
+        $headers = $this->toInternetMessageHeaders($message->getHeaders());
+
+        if ($headers !== null) {
+            $messageData['internetMessageHeaders'] = $headers;
+        }
+
         return $messageData;
     }
 
@@ -297,5 +304,32 @@ class Office365MailTransport extends AbstractTransport
     public function __toString(): string
     {
         return 'office365mail';
+    }
+
+    /**
+     * Transforms given Symfony Headers
+     * Microsoft Graph internet message headers
+     * @param Headers $headers
+     * @return array|null
+     */
+    protected function toInternetMessageHeaders(Headers $headers): ?array {
+        $customHeaders = [];
+
+
+        foreach ($headers->all() as $header) {
+            $name = $header->getName();
+            $body = $header->getBodyAsString();
+
+            if (isset($name, $body) && stripos($name, 'X-') === 0) {
+                $customHeaders[] = [
+                    'name' => $name,
+                    'value' => $body,
+                ];
+            }
+        }
+
+        return count($customHeaders) > 0
+            ? $customHeaders
+            : null;
     }
 }
