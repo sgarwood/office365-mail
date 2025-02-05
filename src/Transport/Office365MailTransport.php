@@ -146,7 +146,7 @@ class Office365MailTransport extends Transport
             'body' => [
                 'contentType' => $message->getBodyContentType() == "text/html" ? 'html' : 'text',
                 'content' => $message->getBody()
-            ]
+            ],
         ];
 
         if ($withAttachments) {
@@ -169,7 +169,33 @@ class Office365MailTransport extends Transport
             }
         }
 
+        $headers = $this->toInternetMessageHeaders($message->getHeaders());
+
+        if ($headers !== null) {
+            $messageData['internetMessageHeaders'] = $headers;
+        }
+
         return $messageData;
+    }
+
+    protected function toInternetMessageHeaders(\Swift_Mime_SimpleHeaderSet $headers): ?array {
+        $customHeaders = [];
+
+        foreach ($headers->getAll() as $header) {
+            $name = $header->getFieldName();
+            $body = $header->getFieldBody();
+
+            if (isset($name, $body) && strpos($name, 'X-') === 0) {
+                $customHeaders[] = [
+                    'name' => $name,
+                    'value' => $body,
+                ];
+            }
+        }
+
+        return count($customHeaders) > 0
+            ? $customHeaders
+            : null;
     }
 
     /**
